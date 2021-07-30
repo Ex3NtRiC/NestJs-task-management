@@ -6,9 +6,15 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  UsePipes,
+  // ValidationPipe,
 } from '@nestjs/common';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createTaskDto } from './dto/create-task.dto';
+import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
+import { TaskStatusValidationPipe } from './pipes/task-status-validation.pipe';
 import { Task, TaskStatus } from './task.model';
 import { TasksService } from './tasks.service';
 
@@ -17,8 +23,8 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  getAllTasks(): Task[] {
-    return this.tasksService.getAllTasks();
+  getTasks(@Query(/*ValidationPipe*/) filterDto: GetTasksFilterDto): Task[] {
+    return this.tasksService.getTasks(filterDto);
   }
 
   @Get(':id')
@@ -27,15 +33,17 @@ export class TasksController {
   }
 
   @Post()
+  @UsePipes(/*ValidationPipe*/)
   createTask(@Body() createTaskDto: createTaskDto): Task {
     return this.tasksService.createTask(createTaskDto);
   }
 
   @Patch(':id/status')
-  updateTask(
+  async updateTaskStatus(
     @Param('id') id: string,
-    @Body('status') status: TaskStatus,
-  ): Task {
+    @Body() updateTaskStatus: UpdateTaskStatusDto,
+  ): Promise<Task> {
+    const { status } = updateTaskStatus;
     return this.tasksService.updateTask(id, status);
   }
 
