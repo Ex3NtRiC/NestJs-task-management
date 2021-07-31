@@ -7,6 +7,7 @@ import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 import { TasksRepository } from './tasks.repository';
 import { Task } from './task.entity';
 import { TaskStatus } from './task-status.enum';
+import { User } from 'src/auth/user.entity';
 @Injectable()
 export class TasksService {
   constructor(
@@ -14,11 +15,11 @@ export class TasksService {
     private readonly tasksRepository: TasksRepository,
   ) {}
 
-  async getTasks(filterDto: GetTasksFilterDto): Promise<Task[]> {
+  async getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
     const { search, status } = filterDto;
-    let tasks = this.tasksRepository.createQueryBuilder('task');
+    let tasks = this.tasksRepository.createQueryBuilder('task').where({ user });
     if (status) {
-      tasks = tasks.where('status=:status', {
+      tasks = tasks.andWhere('status=:status', {
         status,
       });
     }
@@ -33,27 +34,34 @@ export class TasksService {
     return await tasks.getMany();
   }
 
-  async getTaskById(id: string): Promise<Task> {
-    const found = await this.tasksRepository.findOne(id);
+  async getTaskById(id: string, user: User): Promise<Task> {
+    const found = await this.tasksRepository.findOne({ id, user });
     if (!found) {
       throw new NotFoundException(`Task with id:${id} is not found!`);
     }
     return found;
   }
 
-  async createTask(createTaskDto: createTaskDto): Promise<Task> {
-    return await this.tasksRepository.createTask(createTaskDto);
+  async createTask(createTaskDto: createTaskDto, user: User): Promise<Task> {
+    return await this.tasksRepository.createTask(createTaskDto, user);
   }
-  async updateTask(id: string, status: TaskStatus): Promise<boolean> {
-    const result = await this.tasksRepository.update(id, { status: status });
+  async updateTask(
+    id: string,
+    status: TaskStatus,
+    user: User,
+  ): Promise<boolean> {
+    const result = await this.tasksRepository.update(
+      { id, user },
+      { status: status },
+    );
     if (result.affected === 0) {
       throw new NotFoundException(`Task with id:${id} is not found!`);
     }
     return true;
   }
 
-  async deleteTask(id: string): Promise<boolean> {
-    const deleted: number = await this.tasksRepository.deleteTask(id);
+  async deleteTask(id: string, user: User): Promise<boolean> {
+    const deleted: number = await this.tasksRepository.deleteTask(id, user);
     if (deleted === 0) {
       throw new NotFoundException(`Task with id:${id} is not found!`);
     }
