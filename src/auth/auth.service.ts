@@ -19,13 +19,13 @@ export class AuthService {
 
   async signIn(
     authCredentialsDto: AuthCredentialsDto,
-  ): Promise<{ token: string }> {
+  ): Promise<{ accessToken: string }> {
     const { username, password } = authCredentialsDto;
     const user = await this.usersRepository.findOne({ username });
     if (user && (await compare(password, user.password))) {
       const payload: JwtPayload = { username };
-      const token: string = await this.jwtService.sign(payload);
-      return { token };
+      const accessToken: string = await this.jwtService.sign(payload);
+      return { accessToken };
     } else {
       throw new UnauthorizedException('username or password is wrong!');
     }
